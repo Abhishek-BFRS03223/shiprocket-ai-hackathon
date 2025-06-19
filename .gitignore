@@ -1,0 +1,21 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output directories
+/bin/
+/dist/
+/build/
+
+# Vendor directories
+/vendor/
+
+# Editor & OS files
+.DS_Store
+*.swp
+
+# Environment variables
+.env 
