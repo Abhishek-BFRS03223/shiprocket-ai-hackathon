@@ -4,9 +4,13 @@ import shutil
 import string
 import tempfile
 
-from dotenv import load_dotenv
-
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    def load_dotenv(*args, **kwargs):
+        pass
+    print("python-dotenv not installed – skipping .env loading (install via 'pip install -r vector/requirements.txt')")
 
 VECTOR_DB = os.getenv("VECTOR_DB", "faiss").lower()
 
@@ -24,14 +28,19 @@ def main():
             f.write(random_doc())
 
         # 2. Import heavy deps lazily (speed CLI startup)
-        from langchain.document_loaders import TextLoader
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
-        if VECTOR_DB == "faiss":
-            from langchain.vectorstores import FAISS as VectorStore
-        else:
-            from langchain.vectorstores import Chroma as VectorStore
-        from langchain.embeddings import OpenAIEmbeddings
-        from langchain_community.embeddings import FakeEmbeddings
+        try:
+            from langchain.document_loaders import TextLoader
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            if VECTOR_DB == "faiss":
+                from langchain.vectorstores import FAISS as VectorStore
+            else:
+                from langchain.vectorstores import Chroma as VectorStore
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain_community.embeddings import FakeEmbeddings
+        except ImportError as e:
+            print("Required vector dependencies missing – please run 'pip install -r vector/requirements.txt'.")
+            print("Import error:", e)
+            return
 
         # 3. Load & split
         docs = TextLoader(txt_path).load()
