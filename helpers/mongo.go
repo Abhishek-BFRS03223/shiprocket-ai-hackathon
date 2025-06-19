@@ -15,7 +15,11 @@ var MongoClient *mongo.Client
 
 // ConnectMongo establishes a connection to MongoDB using the MONGODB_URI environment variable.
 func ConnectMongo() {
-	uri := os.Getenv("MONGODB_URI")
+	// Prefer specific catalog URI if provided
+	uri := os.Getenv("MONGO_DB_CATALOG")
+	if uri == "" {
+		uri = os.Getenv("MONGODB_URI")
+	}
 	if uri == "" {
 		// Default local URI if not provided
 		uri = "mongodb://localhost:27017"

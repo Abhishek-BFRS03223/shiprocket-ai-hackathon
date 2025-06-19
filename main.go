@@ -19,6 +19,7 @@ func main() {
 	// Initialize external services
 	helpers.ConnectMongo()
 	helpers.ConnectPostgres()
+	helpers.ConnectMySQL()
 	helpers.InitOpenAI()
 
 	// Setup router

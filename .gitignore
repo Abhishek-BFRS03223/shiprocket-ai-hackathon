@@ -18,4 +18,8 @@
 *.swp
 
 # Environment variables
-.env 
+.env
+
+# Vector stores
+vector_store/
+*.chroma/ 
