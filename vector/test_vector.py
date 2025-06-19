@@ -30,7 +30,8 @@ def main():
             from langchain.vectorstores import FAISS as VectorStore
         else:
             from langchain.vectorstores import Chroma as VectorStore
-        from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+        from langchain.embeddings import OpenAIEmbeddings
+        from langchain_community.embeddings import FakeEmbeddings
 
         # 3. Load & split
         docs = TextLoader(txt_path).load()
@@ -38,7 +39,7 @@ def main():
         splits = splitter.split_documents(docs)
 
         # 4. Pick embeddings backend
-        embedder = OpenAIEmbeddings() if os.getenv("OPENAI_API_KEY") else HuggingFaceEmbeddings()
+        embedder = OpenAIEmbeddings() if os.getenv("OPENAI_API_KEY") else FakeEmbeddings(size=768)
 
         # 5. Build vector store
         out_dir = os.path.join(tmpdir, "index")
