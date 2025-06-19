@@ -12,20 +12,22 @@ load_dotenv()
 # Embeddings
 try:
     from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
-except ImportError:
-    raise ImportError("Please install langchain and embedding backends via requirements.txt")
+except ImportError as e:
+    raise ImportError("Missing langchain core modules – install deps via 'pip install -r vector/requirements.txt'") from e
 
-# Loaders
-from langchain.document_loaders import (TextLoader, CSVLoader, PyPDFLoader)
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# Loaders & vector stores moved to langchain_community in 0.2+
+try:
+    from langchain_community.document_loaders import TextLoader, CSVLoader, PyPDFLoader
+    from langchain.text_splitter import RecursiveCharacterTextSplitter  # still in core
 
-# Vector stores
-if VECTOR_DB == "faiss":
-    from langchain.vectorstores import FAISS as VectorStore
-elif VECTOR_DB == "chroma":
-    from langchain.vectorstores import Chroma as VectorStore
-else:
-    raise ValueError("Unsupported VECTOR_DB, choose 'faiss' or 'chroma'")
+    if VECTOR_DB == "faiss":
+        from langchain_community.vectorstores import FAISS as VectorStore
+    elif VECTOR_DB == "chroma":
+        from langchain_community.vectorstores import Chroma as VectorStore
+    else:
+        raise ValueError("Unsupported VECTOR_DB, choose 'faiss' or 'chroma'")
+except ImportError as e:
+    raise ImportError("Missing langchain-community modules – run 'pip install langchain-community' or update requirements") from e
 
 
 def load_documents(paths):

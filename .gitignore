@@ -22,4 +22,8 @@
 
 # Vector stores
 vector_store/
-*.chroma/ 
+*.chroma/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/ 

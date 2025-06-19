@@ -8,4 +8,5 @@ python-dotenv==1.0.1
 pandas==2.2.2
 llama-index==0.10.28.post1
 sentence-transformers==2.6.1
-numpy>=1.26 
+numpy>=1.26
+langchain-community==0.0.37 
