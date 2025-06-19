@@ -1,0 +1,29 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output directories
+/bin/
+/dist/
+/build/
+
+# Vendor directories
+/vendor/
+
+# Editor & OS files
+.DS_Store
+*.swp
+
+# Environment variables
+.env
+
+# Vector stores
+vector_store/
+*.chroma/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/ 
