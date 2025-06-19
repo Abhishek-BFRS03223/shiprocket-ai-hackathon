@@ -1,14 +1,73 @@
-# Binaries
+# Dependencies
+node_modules/
+*.log
+npm-debug.log*
+
+# Go dependencies
+/vendor/
+
+# Build outputs
+/build/
+/dist/
 *.exe
 *.dll
 *.so
 *.dylib
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+langchain_env/
+
+# Python virtual environments
+*.egg-info/
+.tox/
+.coverage
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+validate_all.py
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Editor & OS files
 *.test
 
 # Output directories
 /bin/
-/dist/
-/build/
 
 # Vendor directories
 /vendor/
