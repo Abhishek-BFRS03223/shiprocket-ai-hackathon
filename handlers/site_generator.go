@@ -85,13 +85,16 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/gpt_site_generator.py"
 	cmd := exec.Command(pythonPath, scriptPath, productName)
 
+	// Set working directory to project root
+	cmd.Dir = "/home/abhisheksoni/shiprocket-ai-hackathon-1"
+
 	output, err := cmd.CombinedOutput() // Use CombinedOutput to get both stdout and stderr
 	if err != nil {
-		fmt.Printf("Error executing Python script: %v\nOutput: %s\n", err, string(output))
+		fmt.Printf("Error executing Python script: %v\nOutput: %s\nWorking Dir: %s\n", err, string(output), cmd.Dir)
 		respondJSON(w, GenerateSiteResponse{
 			Success:     false,
 			ProductName: productName,
-			Message:     fmt.Sprintf("Python execution failed: %v", err),
+			Message:     fmt.Sprintf("Python execution failed: %v - Output: %s", err, string(output)),
 			GeneratedAt: time.Now().Format(time.RFC3339),
 		})
 		return
