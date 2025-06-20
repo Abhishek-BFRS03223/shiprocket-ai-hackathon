@@ -6,7 +6,8 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
-  const [generatedSites, setGeneratedSites] = useState([])
+
+  const [showPreview, setShowPreview] = useState(false)
 
   // Generate website from product name
   const generateWebsite = async () => {
@@ -15,6 +16,7 @@ function App() {
       return
     }
 
+    console.log('🚀 Starting generation for:', productName)
     setIsGenerating(true)
     setError('')
     setResult(null)
@@ -29,34 +31,72 @@ function App() {
       })
 
       const data = await response.json()
+      console.log('📥 Received response:', data)
       
       if (data.success) {
         setResult(data)
-        loadGeneratedSites() // Refresh the sites list
         setProductName('') // Clear input
+        console.log('✅ Success! Site content length:', data.site_content?.length || 0)
       } else {
         setError(data.message || 'Generation failed')
       }
     } catch (err) {
+      console.error('❌ Generation error:', err)
       setError('Failed to connect to server. Make sure backend is running.')
     } finally {
       setIsGenerating(false)
     }
   }
 
-  // Load all generated sites
-  const loadGeneratedSites = async () => {
+  // Open website in new window
+  const openSiteInNewWindow = () => {
+    if (!result?.site_content) return
+    
     try {
-      const response = await fetch('http://localhost:3000/api/sites')
-      const data = await response.json()
-      
-      if (data.success) {
-        setGeneratedSites(data.sites)
+      const newWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes')
+      if (newWindow) {
+        newWindow.document.write(result.site_content)
+        newWindow.document.close()
+        newWindow.focus()
+      } else {
+        // Fallback if popup was blocked
+        downloadWebsite()
       }
-    } catch (err) {
-      console.error('Failed to load sites:', err)
+    } catch (error) {
+      console.error('Failed to open new window:', error)
+      downloadWebsite()
     }
   }
+
+  // Download website as HTML file
+  const downloadWebsite = () => {
+    if (!result?.site_content) return
+    
+    const blob = new Blob([result.site_content], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${result.product_name.replace(/[^a-zA-Z0-9]/g, '_')}_website.html`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  // Copy website HTML to clipboard
+  const copyWebsiteContent = async () => {
+    if (!result?.site_content) return
+    
+    try {
+      await navigator.clipboard.writeText(result.site_content)
+      alert('✅ Website HTML copied to clipboard!')
+    } catch (error) {
+      console.error('Failed to copy:', error)
+      alert('❌ Failed to copy to clipboard')
+    }
+  }
+
+
 
   // Generate demo sites
   const generateDemoSites = async () => {
@@ -72,7 +112,6 @@ function App() {
       
       if (data.success) {
         setResult({ message: 'Demo sites generated successfully!', demo: true })
-        loadGeneratedSites()
       } else {
         setError('Demo generation failed')
       }
@@ -83,10 +122,7 @@ function App() {
     }
   }
 
-  // Load sites on component mount
-  React.useEffect(() => {
-    loadGeneratedSites()
-  }, [])
+
 
   return (
     <div className="app">
@@ -138,57 +174,75 @@ function App() {
             </div>
           )}
 
-          {/* Success Result */}
-          {result && (
-            <div className="success-message">
-              ✅ {result.demo ? result.message : `Website generated for "${result.product_name}"`}
-              {result.site_path && (
-                <div className="result-actions">
-                  <a 
-                    href={`http://localhost:3000/generated/${result.site_path.split('/').pop()}/index.html`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="view-site-btn"
-                  >
-                    🌐 View Website
-                  </a>
+          {/* Enhanced Success Result */}
+          {result && result.site_content && (
+            <div className="success-message enhanced">
+              <h3>✅ Website Generated Successfully!</h3>
+              <p><strong>Product:</strong> {result.product_name}</p>
+              <p><strong>Theme:</strong> Dynamic ({result.theme})</p>
+              <p><strong>Content Length:</strong> {result.site_content.length.toLocaleString()} characters</p>
+              
+              <div className="website-actions">
+                <button
+                  onClick={openSiteInNewWindow}
+                  className="action-btn primary"
+                >
+                  🚀 Open in New Window
+                </button>
+                
+                <button
+                  onClick={downloadWebsite}
+                  className="action-btn secondary"
+                >
+                  💾 Download Website
+                </button>
+                
+                <button
+                  onClick={copyWebsiteContent}
+                  className="action-btn secondary"
+                >
+                  📋 Copy HTML
+                </button>
+                
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="action-btn secondary"
+                >
+                  👁️ {showPreview ? 'Hide' : 'Show'} Preview
+                </button>
+              </div>
+
+              <div className="tip-message">
+                💡 <strong>Tip:</strong> If "Open in New Window" doesn't work due to popup blockers, use "Download Website" or "Show Preview"
+              </div>
+              
+              {showPreview && (
+                <div className="preview-section">
+                  <h4>📱 Website Preview</h4>
+                  <iframe
+                    srcDoc={result.site_content}
+                    style={{
+                      width: '100%',
+                      height: '600px',
+                      border: '2px solid #667eea',
+                      borderRadius: '10px'
+                    }}
+                    title="Generated Website Preview"
+                  />
                 </div>
               )}
             </div>
           )}
+
+          {/* Demo Success Result */}
+          {result && result.demo && (
+            <div className="success-message">
+              ✅ {result.message}
+            </div>
+          )}
         </div>
 
-        {/* Generated Sites Gallery */}
-        {generatedSites.length > 0 && (
-          <div className="sites-gallery">
-            <h3>📂 Generated Websites ({generatedSites.length})</h3>
-            <div className="sites-grid">
-              {generatedSites.map((site, index) => (
-                <div key={index} className="site-card">
-                  <h4>{site.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
-                  <div className="site-actions">
-                    <a
-                      href={`http://localhost:3000/generated/${site}/index.html`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="view-btn"
-                    >
-                      👁️ View
-                    </a>
-                    <a
-                      href={`http://localhost:3000/api/sites/${site}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="preview-btn"
-                    >
-                      🔗 Direct Link
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
       </main>
 
       {/* Footer */}

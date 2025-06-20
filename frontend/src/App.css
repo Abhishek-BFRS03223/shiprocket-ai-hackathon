@@ -189,82 +189,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* Sites Gallery */
-.sites-gallery {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
 
-.sites-gallery h3 {
-  font-size: 2rem;
-  color: #2c3e50;
-  margin-bottom: 25px;
-  text-align: center;
-  font-weight: 600;
-}
-
-.sites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.site-card {
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-}
-
-.site-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  border-color: #667eea;
-}
-
-.site-card h4 {
-  font-size: 1.3rem;
-  color: #2c3e50;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.site-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-.view-btn, .preview-btn {
-  padding: 8px 16px;
-  text-decoration: none;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  flex: 1;
-  text-align: center;
-}
-
-.view-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.preview-btn {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-}
-
-.view-btn:hover, .preview-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
 
 /* Footer */
 .footer {
@@ -310,13 +235,7 @@ body {
     max-width: 300px;
   }
   
-  .sites-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .site-actions {
-    flex-direction: column;
-  }
+
 }
 
 @media (max-width: 480px) {
@@ -328,7 +247,7 @@ body {
     padding: 30px 15px;
   }
   
-  .generator-card, .sites-gallery {
+  .generator-card {
     margin: 0 5px;
     padding: 20px 15px;
   }
@@ -347,6 +266,96 @@ body {
 
 .generate-btn:disabled .loading-spinner {
   animation: spin 1s linear infinite;
+}
+
+/* Enhanced Success Message Styles */
+.success-message.enhanced {
+  padding: 2rem;
+}
+
+.success-message h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+}
+
+.success-message p {
+  margin: 0.5rem 0;
+  opacity: 0.9;
+}
+
+.website-actions {
+  display: flex;
+  gap: 10px;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  min-width: 140px;
+}
+
+.action-btn.primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.tip-message {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.preview-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.preview-section h4 {
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+/* Responsive adjustments for new buttons */
+@media (max-width: 768px) {
+  .website-actions {
+    grid-template-columns: 1fr 1fr;
+    display: grid;
+    gap: 10px;
+  }
+  
+  .action-btn {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .website-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Smooth Transitions */
