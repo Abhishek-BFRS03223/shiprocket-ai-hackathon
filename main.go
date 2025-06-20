@@ -25,16 +25,30 @@ func main() {
 	// Setup router
 	r := mux.NewRouter()
 
-	// Health check
-	r.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
+	// API routes
+	api := r.PathPrefix("/api").Subrouter()
 
-	// TODO: add your routes here
+	// Health check
+	api.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
+
+	// Site Generator API routes
+	api.HandleFunc("/generate", handlers.GenerateWebsiteHandler).Methods("POST", "OPTIONS")
+	api.HandleFunc("/sites", handlers.ListGeneratedSitesHandler).Methods("GET")
+	api.HandleFunc("/sites/{siteName}", handlers.GetGeneratedSiteHandler).Methods("GET")
+	api.HandleFunc("/demo/generate", handlers.DemoSiteGeneratorHandler).Methods("GET")
+
+	// Serve generated sites directly
+	r.PathPrefix("/generated/").Handler(http.StripPrefix("/generated/", http.FileServer(http.Dir("generated_sites/"))))
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
 	}
 
-	log.Printf("Server running on port %s", port)
+	log.Printf("🚀 Server running on port %s", port)
+	log.Printf("📊 Health check: http://localhost:%s/api/health", port)
+	log.Printf("🎯 Site Generator: http://localhost:%s/api/generate", port)
+	log.Printf("📝 Generated Sites: http://localhost:%s/api/sites", port)
+	log.Printf("🔥 Demo Generator: http://localhost:%s/api/demo/generate", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

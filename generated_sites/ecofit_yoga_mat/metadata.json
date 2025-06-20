@@ -1,0 +1,85 @@
+{
+  "product_name": "EcoFit Yoga Mat",
+  "timestamp": "2025-06-20T10:40:49.837693",
+  "generation_method": "Simple Template Engine",
+  "analysis": {
+    "product_name": "EcoFit Yoga Mat",
+    "category": "health_wellness",
+    "template": {
+      "colors": {
+        "primary": "#4CAF50",
+        "secondary": "#E8F5E8",
+        "accent": "#2196F3"
+      },
+      "tone": "Caring and trustworthy",
+      "sections": [
+        "Hero",
+        "Benefits",
+        "How It Works",
+        "Testimonials",
+        "Pricing",
+        "Contact"
+      ]
+    },
+    "features": [
+      "Environmentally friendly"
+    ],
+    "target_audience": "Health and wellness focused individuals",
+    "pricing": "$149"
+  },
+  "content": {
+    "hero": {
+      "headline": "Discover EcoFit Yoga Mat",
+      "subheadline": "Revolutionary innovation that transforms your wellness routine",
+      "cta_button": "Get Started Today",
+      "hero_text": "Experience the future with EcoFit Yoga Mat. Designed for those who demand excellence."
+    },
+    "features": {
+      "section_title": "Why Choose EcoFit Yoga Mat",
+      "features_list": [
+        {
+          "title": "Environmentally friendly",
+          "description": "Experience environmentally friendly like never before with our innovative approach."
+        }
+      ]
+    },
+    "benefits": {
+      "section_title": "Benefits You'll Love",
+      "benefits_list": [
+        "Improve your overall health",
+        "Evidence-based approach",
+        "Personalized experience"
+      ]
+    },
+    "testimonials": {
+      "section_title": "What Our Customers Say",
+      "testimonials": [
+        {
+          "name": "Sarah Johnson",
+          "role": "Professional User",
+          "text": "EcoFit Yoga Mat exceeded all my expectations. Highly recommended!"
+        },
+        {
+          "name": "Mike Chen",
+          "role": "Business Owner",
+          "text": "Game-changer! EcoFit Yoga Mat revolutionized our workflow."
+        }
+      ]
+    },
+    "pricing": {
+      "section_title": "Simple Pricing",
+      "price": "$149",
+      "features": [
+        "All features included",
+        "24/7 support",
+        "30-day guarantee"
+      ]
+    },
+    "contact": {
+      "section_title": "Ready to Start?",
+      "cta_text": "Join thousands who love EcoFit Yoga Mat",
+      "cta_button": "Get EcoFit Yoga Mat Now",
+      "contact_info": "Contact us: hello@ecofityogamat.com"
+    }
+  }
+}
