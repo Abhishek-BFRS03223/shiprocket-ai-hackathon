@@ -1,21 +1,21 @@
 {
-  "product_name": "EcoFit Yoga Mat",
-  "timestamp": "2025-06-20T11:17:32.844457",
+  "product_name": "Ecommerce Website",
+  "timestamp": "2025-06-20T11:19:41.317667",
   "generation_method": "Simple Template Engine",
   "analysis": {
-    "product_name": "EcoFit Yoga Mat",
-    "category": "health_wellness",
+    "product_name": "Ecommerce Website",
+    "category": "general",
     "template": {
       "colors": {
-        "primary": "#4CAF50",
-        "secondary": "#E8F5E8",
-        "accent": "#2196F3"
+        "primary": "#2196F3",
+        "secondary": "#F5F5F5",
+        "accent": "#FF9800"
       },
-      "tone": "Caring and trustworthy",
+      "tone": "Friendly and approachable",
       "sections": [
         "Hero",
+        "Features",
         "Benefits",
-        "How It Works",
         "Testimonials",
         "Pricing",
         "Contact"
@@ -24,18 +24,18 @@
     "features": [
       "Environmentally friendly"
     ],
-    "target_audience": "Health and wellness focused individuals",
-    "pricing": "$149"
+    "target_audience": "General consumers",
+    "pricing": "$59"
   },
   "content": {
     "hero": {
-      "headline": "Discover EcoFit Yoga Mat",
-      "subheadline": "Revolutionary innovation that transforms your wellness routine",
+      "headline": "Discover Ecommerce Website",
+      "subheadline": "Revolutionary innovation that transforms your daily life",
       "cta_button": "Get Started Today",
-      "hero_text": "Experience the future with EcoFit Yoga Mat. Designed for those who demand excellence."
+      "hero_text": "Experience the future with Ecommerce Website. Designed for those who demand excellence."
     },
     "features": {
-      "section_title": "Why Choose EcoFit Yoga Mat",
+      "section_title": "Why Choose Ecommerce Website",
       "features_list": [
         {
           "title": "Environmentally friendly",
@@ -46,9 +46,9 @@
     "benefits": {
       "section_title": "Benefits You'll Love",
       "benefits_list": [
-        "Improve your overall health",
-        "Evidence-based approach",
-        "Personalized experience"
+        "Save time and increase efficiency",
+        "Professional results guaranteed",
+        "Easy to use for everyone"
       ]
     },
     "testimonials": {
@@ -57,18 +57,18 @@
         {
           "name": "Sarah Johnson",
           "role": "Professional User",
-          "text": "EcoFit Yoga Mat exceeded all my expectations. Highly recommended!"
+          "text": "Ecommerce Website exceeded all my expectations. Highly recommended!"
         },
         {
           "name": "Mike Chen",
           "role": "Business Owner",
-          "text": "Game-changer! EcoFit Yoga Mat revolutionized our workflow."
+          "text": "Game-changer! Ecommerce Website revolutionized our workflow."
         }
       ]
     },
     "pricing": {
       "section_title": "Simple Pricing",
-      "price": "$149",
+      "price": "$59",
       "features": [
         "All features included",
         "24/7 support",
@@ -77,9 +77,9 @@
     },
     "contact": {
       "section_title": "Ready to Start?",
-      "cta_text": "Join thousands who love EcoFit Yoga Mat",
-      "cta_button": "Get EcoFit Yoga Mat Now",
-      "contact_info": "Contact us: hello@ecofityogamat.com"
+      "cta_text": "Join thousands who love Ecommerce Website",
+      "cta_button": "Get Ecommerce Website Now",
+      "contact_info": "Contact us: hello@ecommercewebsite.com"
     }
   }
 }
