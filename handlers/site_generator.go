@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -23,9 +24,11 @@ type GenerateSiteRequest struct {
 type GenerateSiteResponse struct {
 	Success     bool   `json:"success"`
 	ProductName string `json:"product_name"`
-	SitePath    string `json:"site_path"`
+	SiteContent string `json:"site_content"`
+	SiteID      string `json:"site_id"`
 	Message     string `json:"message"`
 	GeneratedAt string `json:"generated_at"`
+	Theme       string `json:"theme"`
 }
 
 // ListSitesResponse represents the response for listing generated sites
@@ -46,7 +49,7 @@ func respondJSON(w http.ResponseWriter, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// GenerateSiteHandler handles website generation requests
+// Enhanced GenerateSiteHandler handles website generation requests with new features
 func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -63,7 +66,7 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse request body manually since we're dealing with form data potentially
+	// Parse request body
 	productName := r.FormValue("product_name")
 	if productName == "" {
 		// Try JSON parsing as fallback
@@ -80,30 +83,40 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute GPT Python script with AI-powered content generation
+	// Clean product name for safety
+	cleanedProductName := regexp.MustCompile(`[^a-zA-Z0-9\s\-_]`).ReplaceAllString(productName, "")
+	if len(cleanedProductName) == 0 {
+		http.Error(w, "Invalid product name", http.StatusBadRequest)
+		return
+	}
+
+	// Execute Enhanced GPT Python script
 	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
 	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/gpt_site_generator.py"
-	cmd := exec.Command(pythonPath, scriptPath, productName)
+	cmd := exec.Command(pythonPath, scriptPath, cleanedProductName)
 
-	// Set working directory to project root
+	// Set working directory and environment
 	cmd.Dir = "/home/abhisheksoni/shiprocket-ai-hackathon-1"
+	cmd.Env = append(os.Environ(),
+		"PYTHONPATH=/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/lib/python3.11/site-packages",
+	)
 
-	output, err := cmd.CombinedOutput() // Use CombinedOutput to get both stdout and stderr
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Error executing Python script: %v\nOutput: %s\nWorking Dir: %s\n", err, string(output), cmd.Dir)
+		fmt.Printf("Error executing Python script: %v\nOutput: %s\n", err, string(output))
 		respondJSON(w, GenerateSiteResponse{
 			Success:     false,
 			ProductName: productName,
-			Message:     fmt.Sprintf("Python execution failed: %v - Output: %s", err, string(output)),
+			Message:     fmt.Sprintf("Site generation failed: %v", err),
 			GeneratedAt: time.Now().Format(time.RFC3339),
 		})
 		return
 	}
 
 	outputStr := strings.TrimSpace(string(output))
-	fmt.Printf("Python script output: %s\n", outputStr) // Debug output
+	fmt.Printf("Enhanced generator output: %s\n", outputStr)
 
-	// Look for SUCCESS or ERROR in the output (could be multiline)
+	// Look for SUCCESS or ERROR in the output
 	lines := strings.Split(outputStr, "\n")
 	var resultLine string
 	for _, line := range lines {
@@ -124,18 +137,41 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.HasPrefix(resultLine, "SUCCESS:") {
-		sitePath := strings.TrimPrefix(resultLine, "SUCCESS:")
+		tempFilePath := strings.TrimPrefix(resultLine, "SUCCESS:")
+
+		// Read the temporary file content
+		content, err := ioutil.ReadFile(tempFilePath)
+		if err != nil {
+			respondJSON(w, GenerateSiteResponse{
+				Success:     false,
+				ProductName: productName,
+				Message:     fmt.Sprintf("Failed to read generated site: %v", err),
+				GeneratedAt: time.Now().Format(time.RFC3339),
+			})
+			return
+		}
+
+		// Extract site ID from file path
+		siteID := filepath.Base(tempFilePath)
+		siteID = strings.TrimSuffix(siteID, ".html")
+
+		// Clean up temporary file after reading
+		go func() {
+			time.Sleep(30 * time.Second) // Keep file for 30 seconds for any immediate requests
+			os.Remove(tempFilePath)
+		}()
 
 		respondJSON(w, GenerateSiteResponse{
 			Success:     true,
 			ProductName: productName,
-			SitePath:    sitePath,
-			Message:     "AI-powered website generated successfully with GPT content and real images",
+			SiteContent: string(content),
+			SiteID:      siteID,
+			Message:     "Enhanced AI-powered website generated successfully with dynamic themes and product images",
 			GeneratedAt: time.Now().Format(time.RFC3339),
+			Theme:       "dynamic", // Indicates theme was randomly selected
 		})
 	} else if strings.HasPrefix(resultLine, "ERROR:") {
 		errorMsg := strings.TrimPrefix(resultLine, "ERROR:")
-
 		respondJSON(w, GenerateSiteResponse{
 			Success:     false,
 			ProductName: productName,
@@ -192,7 +228,7 @@ func ListSitesHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ViewSiteHandler serves a specific generated website
+// ViewSiteHandler serves site content directly from memory/temporary storage
 func ViewSiteHandler(w http.ResponseWriter, r *http.Request) {
 	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -203,70 +239,102 @@ func ViewSiteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	vars := mux.Vars(r)
-	siteName := vars["siteName"]
+	siteID := vars["siteId"]
 
-	if siteName == "" {
-		http.Error(w, "Site name is required", http.StatusBadRequest)
+	if siteID == "" {
+		http.Error(w, "Site ID is required", http.StatusBadRequest)
 		return
 	}
 
-	// Sanitize site name to prevent directory traversal
-	re := regexp.MustCompile(`[^a-zA-Z0-9_-]`)
-	safeSiteName := re.ReplaceAllString(siteName, "")
+	// For temporary sites, we'll serve a message indicating the site was temporary
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	html := `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Temporary Site Expired</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+        .message { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+        h1 { color: #e74c3c; margin-bottom: 20px; }
+        p { color: #666; line-height: 1.6; margin-bottom: 20px; }
+        button { background: #3498db; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="message">
+        <h1>⏰ Temporary Site Expired</h1>
+        <p>This was a temporary demonstration site that has been automatically cleared for your privacy and to keep the system clean.</p>
+        <p>Generate a new site to see the latest AI-powered designs with dynamic themes and enhanced features!</p>
+        <button onclick="window.close()">Close</button>
+    </div>
+</body>
+</html>`
 
-	indexPath := filepath.Join("generated_sites", safeSiteName, "index.html")
-
-	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
-		http.Error(w, "Site not found", http.StatusNotFound)
-		return
-	}
-
-	http.ServeFile(w, r, indexPath)
+	w.Write([]byte(html))
 }
 
-// DemoGenerateHandler generates 5 demo websites with images
+// DemoGenerateHandler generates multiple demo sites
 func DemoGenerateHandler(w http.ResponseWriter, r *http.Request) {
 	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
+	// Demo products with diverse categories
+	demoProducts := []string{
+		"Smart AI Fitness Watch",
+		"Artisanal Coffee Blend",
+		"Luxury Designer Handbag",
+		"Electric Sports Car",
+		"Organic Yoga Mat",
+		"Gaming Laptop Pro",
+		"Wireless Noise-Canceling Headphones",
 	}
 
-	// Execute Enhanced Python script to generate demo sites with real images
-	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
-	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/enhanced_site_generator.py"
+	var results []GenerateSiteResponse
+	successCount := 0
 
-	// Demo products representing different categories
-	products := []string{"Smart Coffee Maker", "EcoFit Yoga Mat", "ProCode Text Editor", "Gourmet Pizza Restaurant", "Luxury Fashion Boutique"}
-
-	results := []string{}
-	for _, product := range products {
+	for _, product := range demoProducts {
+		// Create a new request for each demo product
+		pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
+		scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/gpt_site_generator.py"
 		cmd := exec.Command(pythonPath, scriptPath, product)
-		output, err := cmd.Output()
-		if err != nil {
-			results = append(results, fmt.Sprintf("ERROR:%s:Failed to generate", product))
-		} else {
-			results = append(results, strings.TrimSpace(string(output)))
+		cmd.Dir = "/home/abhisheksoni/shiprocket-ai-hackathon-1"
+
+		output, err := cmd.CombinedOutput()
+
+		if err == nil {
+			outputStr := strings.TrimSpace(string(output))
+			if strings.Contains(outputStr, "SUCCESS:") {
+				successCount++
+				results = append(results, GenerateSiteResponse{
+					Success:     true,
+					ProductName: product,
+					Message:     "Demo site generated successfully",
+					GeneratedAt: time.Now().Format(time.RFC3339),
+				})
+			}
 		}
 	}
 
-	// Combine all results into output string
-	output := strings.Join(results, "\n")
+	response := map[string]interface{}{
+		"success":         true,
+		"total_generated": successCount,
+		"demo_results":    results,
+		"message":         fmt.Sprintf("Generated %d demo sites with enhanced themes and features", successCount),
+	}
 
-	respondJSON(w, map[string]interface{}{
-		"success":      true,
-		"message":      "Enhanced demo sites generated successfully with real images",
-		"output":       output,
-		"generated_at": time.Now().Format(time.RFC3339),
-	})
+	respondJSON(w, response)
 }
