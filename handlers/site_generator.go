@@ -80,9 +80,9 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute Enhanced Python script with real images and dynamic sections
+	// Execute GPT Python script with AI-powered content generation
 	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
-	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/enhanced_site_generator.py"
+	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/gpt_site_generator.py"
 	cmd := exec.Command(pythonPath, scriptPath, productName)
 
 	output, err := cmd.CombinedOutput() // Use CombinedOutput to get both stdout and stderr
@@ -127,7 +127,7 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 			Success:     true,
 			ProductName: productName,
 			SitePath:    sitePath,
-			Message:     "Enhanced website generated successfully with real images and dynamic sections",
+			Message:     "AI-powered website generated successfully with GPT content and real images",
 			GeneratedAt: time.Now().Format(time.RFC3339),
 		})
 	} else if strings.HasPrefix(resultLine, "ERROR:") {
