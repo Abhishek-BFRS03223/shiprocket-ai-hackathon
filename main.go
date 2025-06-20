@@ -32,13 +32,13 @@ func main() {
 	api.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
 
 	// Site Generator API routes
-	api.HandleFunc("/generate", handlers.GenerateWebsiteHandler).Methods("POST", "OPTIONS")
-	api.HandleFunc("/sites", handlers.ListGeneratedSitesHandler).Methods("GET")
-	api.HandleFunc("/sites/{siteName}", handlers.GetGeneratedSiteHandler).Methods("GET")
-	api.HandleFunc("/demo/generate", handlers.DemoSiteGeneratorHandler).Methods("GET")
+	api.HandleFunc("/generate", handlers.GenerateSiteHandler).Methods("POST", "OPTIONS")
+	api.HandleFunc("/sites", handlers.ListSitesHandler).Methods("GET", "OPTIONS")
+	api.HandleFunc("/sites/{siteName}", handlers.ViewSiteHandler).Methods("GET", "OPTIONS")
+	api.HandleFunc("/demo/generate", handlers.DemoGenerateHandler).Methods("POST", "OPTIONS")
 
-	// Serve generated sites directly
-	r.PathPrefix("/generated/").Handler(http.StripPrefix("/generated/", http.FileServer(http.Dir("generated_sites/"))))
+	// Static file serving for generated sites
+	r.PathPrefix("/generated/").Handler(http.StripPrefix("/generated/", http.FileServer(http.Dir("./generated_sites/"))))
 
 	port := os.Getenv("PORT")
 	if port == "" {

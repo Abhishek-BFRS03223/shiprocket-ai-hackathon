@@ -1,126 +1,203 @@
-import { useState } from 'react'
-import axios from 'axios'
-import SiteGenerator from './SiteGenerator'
+import React, { useState } from 'react'
+import './App.css'
 
 function App() {
-  const [message, setMessage] = useState('')
-  const [currentView, setCurrentView] = useState('generator') // 'generator' or 'test'
+  const [productName, setProductName] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState('')
+  const [generatedSites, setGeneratedSites] = useState([])
 
-  const testConnection = async () => {
+  // Generate website from product name
+  const generateWebsite = async () => {
+    if (!productName.trim()) {
+      setError('Please enter a product name')
+      return
+    }
+
+    setIsGenerating(true)
+    setError('')
+    setResult(null)
+
     try {
-      const response = await axios.get('http://localhost:3000/api/health')
-      setMessage(response.data.message)
-    } catch (error) {
-      setMessage('Connection failed: ' + error.message)
+      const response = await fetch('http://localhost:3000/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ product_name: productName.trim() })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        setResult(data)
+        loadGeneratedSites() // Refresh the sites list
+        setProductName('') // Clear input
+      } else {
+        setError(data.message || 'Generation failed')
+      }
+    } catch (err) {
+      setError('Failed to connect to server. Make sure backend is running.')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
+  // Load all generated sites
+  const loadGeneratedSites = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/sites')
+      const data = await response.json()
+      
+      if (data.success) {
+        setGeneratedSites(data.sites)
+      }
+    } catch (err) {
+      console.error('Failed to load sites:', err)
+    }
+  }
+
+  // Generate demo sites
+  const generateDemoSites = async () => {
+    setIsGenerating(true)
+    setError('')
+    
+    try {
+      const response = await fetch('http://localhost:3000/api/demo/generate', {
+        method: 'POST'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setResult({ message: 'Demo sites generated successfully!', demo: true })
+        loadGeneratedSites()
+      } else {
+        setError('Demo generation failed')
+      }
+    } catch (err) {
+      setError('Failed to generate demo sites')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // Load sites on component mount
+  React.useEffect(() => {
+    loadGeneratedSites()
+  }, [])
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f7fa' }}>
-      {/* Navigation */}
-      <nav style={{
-        background: 'white',
-        padding: '15px 0',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        marginBottom: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, color: '#333' }}>🚀 Shiprocket AI Hackathon</h2>
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <button
-              onClick={() => setCurrentView('generator')}
-              style={{
-                background: currentView === 'generator' ? '#667eea' : 'transparent',
-                color: currentView === 'generator' ? 'white' : '#667eea',
-                border: '2px solid #667eea',
-                borderRadius: '20px',
-                padding: '8px 20px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-            >
-              🎯 Site Generator
-            </button>
-            <button
-              onClick={() => setCurrentView('test')}
-              style={{
-                background: currentView === 'test' ? '#667eea' : 'transparent',
-                color: currentView === 'test' ? 'white' : '#667eea',
-                border: '2px solid #667eea',
-                borderRadius: '20px',
-                padding: '8px 20px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-            >
-              🔧 System Test
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="app">
+      {/* Header */}
+      <header className="header">
+        <h1>🚀 One-Click Site Generator</h1>
+        <p>Enter any product name and get a professional website with images instantly</p>
+      </header>
 
-      {/* Main Content */}
-      {currentView === 'generator' ? (
-        <SiteGenerator />
-      ) : (
-        <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '15px',
-            padding: '40px',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
-          }}>
-            <h2>🔧 System Connection Test</h2>
-            <p>Test the connection between frontend and backend services.</p>
+      {/* Main Generator */}
+      <main className="main">
+        <div className="generator-card">
+          <h2>Generate Your Website</h2>
+          
+          <div className="input-section">
+            <input
+              type="text"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="Enter product name (e.g., Smart Coffee Maker, AI Drone, Yoga Mat)"
+              className="product-input"
+              onKeyPress={(e) => e.key === 'Enter' && generateWebsite()}
+              disabled={isGenerating}
+            />
             
-            <button 
-              onClick={testConnection}
-              style={{
-                padding: '12px 25px',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '25px',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: '600',
-                transition: 'transform 0.3s ease'
-              }}
-              onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              🔗 Test Backend Connection
-            </button>
-            
-            {message && (
-              <div style={{
-                marginTop: '20px',
-                padding: '15px',
-                backgroundColor: message.includes('failed') ? '#ffebee' : '#e8f5e8',
-                border: `2px solid ${message.includes('failed') ? '#f44336' : '#4caf50'}`,
-                borderRadius: '10px',
-                fontWeight: '600'
-              }}>
-                {message.includes('failed') ? '❌' : '✅'} {message}
-              </div>
-            )}
-
-            <div style={{ marginTop: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h4>🎯 Ready for Hackathon!</h4>
-              <ul style={{ textAlign: 'left', lineHeight: '1.8' }}>
-                <li>✅ <strong>Go Backend</strong> - API server with MongoDB/MySQL</li>
-                <li>✅ <strong>React Frontend</strong> - Modern UI with Vite</li>
-                <li>✅ <strong>AI Agent System</strong> - LangChain + OpenAI tools</li>
-                <li>✅ <strong>Site Generator</strong> - One-click website creation</li>
-                <li>✅ <strong>Free APIs</strong> - Groq, HuggingFace alternatives</li>
-                <li>✅ <strong>Database Support</strong> - MongoDB, MySQL, PostgreSQL</li>
-              </ul>
+            <div className="button-group">
+              <button
+                onClick={generateWebsite}
+                disabled={isGenerating || !productName.trim()}
+                className="generate-btn primary"
+              >
+                {isGenerating ? '🔄 Generating...' : '✨ Generate Website'}
+              </button>
+              
+              <button
+                onClick={generateDemoSites}
+                disabled={isGenerating}
+                className="demo-btn secondary"
+              >
+                🎯 Generate 5 Demo Sites
+              </button>
             </div>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="error-message">
+              ❌ {error}
+            </div>
+          )}
+
+          {/* Success Result */}
+          {result && (
+            <div className="success-message">
+              ✅ {result.demo ? result.message : `Website generated for "${result.product_name}"`}
+              {result.site_path && (
+                <div className="result-actions">
+                  <a 
+                    href={`http://localhost:3000/generated/${result.site_path.split('/').pop()}/index.html`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="view-site-btn"
+                  >
+                    🌐 View Website
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Generated Sites Gallery */}
+        {generatedSites.length > 0 && (
+          <div className="sites-gallery">
+            <h3>📂 Generated Websites ({generatedSites.length})</h3>
+            <div className="sites-grid">
+              {generatedSites.map((site, index) => (
+                <div key={index} className="site-card">
+                  <h4>{site.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
+                  <div className="site-actions">
+                    <a
+                      href={`http://localhost:3000/generated/${site}/index.html`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="view-btn"
+                    >
+                      👁️ View
+                    </a>
+                    <a
+                      href={`http://localhost:3000/api/sites/${site}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="preview-btn"
+                    >
+                      🔗 Direct Link
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="footer">
+        <p>🏆 Shiprocket AI Hackathon - One-Click Site Generator</p>
+        <p>✨ Professional websites with images in seconds</p>
+      </footer>
     </div>
   )
 }
 
-export default App; 
+export default App 

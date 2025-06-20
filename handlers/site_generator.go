@@ -3,36 +3,52 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 )
 
-// SiteGeneratorRequest represents the request to generate a site
-type SiteGeneratorRequest struct {
+// GenerateSiteRequest represents the request to generate a website
+type GenerateSiteRequest struct {
 	ProductName string `json:"product_name"`
-	SaveToDisk  bool   `json:"save_to_disk,omitempty"`
 }
 
-// SiteGeneratorResponse represents the response from site generation
-type SiteGeneratorResponse struct {
-	Success          bool   `json:"success"`
-	ProductName      string `json:"product_name"`
-	Timestamp        string `json:"timestamp"`
-	GenerationMethod string `json:"generation_method"`
-	SavedTo          string `json:"saved_to,omitempty"`
-	HTML             string `json:"html,omitempty"`
-	Error            string `json:"error,omitempty"`
+// GenerateSiteResponse represents the response from site generation
+type GenerateSiteResponse struct {
+	Success     bool   `json:"success"`
+	ProductName string `json:"product_name"`
+	SitePath    string `json:"site_path"`
+	Message     string `json:"message"`
+	GeneratedAt string `json:"generated_at"`
 }
 
-// GenerateWebsiteHandler handles website generation requests
-func GenerateWebsiteHandler(w http.ResponseWriter, r *http.Request) {
+// ListSitesResponse represents the response for listing generated sites
+type ListSitesResponse struct {
+	Success bool     `json:"success"`
+	Sites   []string `json:"sites"`
+	Count   int      `json:"count"`
+}
+
+// Helper function to parse JSON from request
+func parseJSON(r *http.Request, target interface{}) error {
+	return json.NewDecoder(r.Body).Decode(target)
+}
+
+// Helper function to respond with JSON
+func respondJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+// GenerateSiteHandler handles website generation requests
+func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -47,227 +63,228 @@ func GenerateWebsiteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req SiteGeneratorRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response := SiteGeneratorResponse{
-			Success: false,
-			Error:   "Invalid JSON request",
+	// Parse request body manually since we're dealing with form data potentially
+	productName := r.FormValue("product_name")
+	if productName == "" {
+		// Try JSON parsing as fallback
+		var req GenerateSiteRequest
+		if err := parseJSON(r, &req); err != nil {
+			http.Error(w, "Invalid request format", http.StatusBadRequest)
+			return
 		}
-		json.NewEncoder(w).Encode(response)
+		productName = req.ProductName
+	}
+
+	if strings.TrimSpace(productName) == "" {
+		http.Error(w, "Product name is required", http.StatusBadRequest)
 		return
 	}
 
-	if req.ProductName == "" {
-		response := SiteGeneratorResponse{
-			Success: false,
-			Error:   "Product name is required",
-		}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
+	// Execute Python script with the basic version first (we'll add images later)
+	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
+	cmd := exec.Command(pythonPath, "-c", fmt.Sprintf(`
+import sys
+sys.path.append("/home/abhisheksoni/shiprocket-ai-hackathon-1/ai_agent")
+from simple_site_generator import SimpleSiteGenerator
 
-	// Generate website using Python script
-	result, err := generateWebsiteWithPython(req.ProductName, req.SaveToDisk)
+generator = SimpleSiteGenerator()
+result = generator.generate_website("%s")
+
+if result["success"]:
+    site_dir = generator.save_website(result)
+    print("SUCCESS:" + site_dir)
+else:
+    print("ERROR:" + result.get("error", "Unknown error"))
+`, strings.ReplaceAll(productName, `"`, `\"`)))
+
+	output, err := cmd.CombinedOutput() // Use CombinedOutput to get both stdout and stderr
 	if err != nil {
-		response := SiteGeneratorResponse{
+		fmt.Printf("Error executing Python script: %v\nOutput: %s\n", err, string(output))
+		respondJSON(w, GenerateSiteResponse{
 			Success:     false,
-			ProductName: req.ProductName,
-			Error:       err.Error(),
-			Timestamp:   time.Now().Format(time.RFC3339),
-		}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
-	json.NewEncoder(w).Encode(result)
-}
-
-// GetGeneratedSiteHandler serves generated HTML sites
-func GetGeneratedSiteHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	siteName := vars["siteName"]
-
-	if siteName == "" {
-		http.Error(w, "Site name required", http.StatusBadRequest)
-		return
-	}
-
-	// Construct path to generated site
-	sitePath := filepath.Join("generated_sites", siteName, "index.html")
-
-	// Check if file exists
-	if _, err := os.Stat(sitePath); os.IsNotExist(err) {
-		http.Error(w, "Site not found", http.StatusNotFound)
-		return
-	}
-
-	// Read and serve the HTML file
-	htmlContent, err := ioutil.ReadFile(sitePath)
-	if err != nil {
-		http.Error(w, "Error reading site file", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html")
-	w.Write(htmlContent)
-}
-
-// ListGeneratedSitesHandler lists all generated sites
-func ListGeneratedSitesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	sitesDir := "generated_sites"
-	sites := []map[string]interface{}{}
-
-	// Check if directory exists
-	if _, err := os.Stat(sitesDir); os.IsNotExist(err) {
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"sites": sites,
-			"total": 0,
+			ProductName: productName,
+			Message:     fmt.Sprintf("Python execution failed: %v", err),
+			GeneratedAt: time.Now().Format(time.RFC3339),
 		})
 		return
 	}
 
-	// Read directory contents
-	files, err := ioutil.ReadDir(sitesDir)
-	if err != nil {
-		http.Error(w, "Error reading sites directory", http.StatusInternalServerError)
+	outputStr := strings.TrimSpace(string(output))
+	fmt.Printf("Python script output: %s\n", outputStr) // Debug output
+
+	// Look for SUCCESS or ERROR in the output (could be multiline)
+	lines := strings.Split(outputStr, "\n")
+	var resultLine string
+	for _, line := range lines {
+		if strings.HasPrefix(line, "SUCCESS:") || strings.HasPrefix(line, "ERROR:") {
+			resultLine = line
+			break
+		}
+	}
+
+	if resultLine == "" {
+		respondJSON(w, GenerateSiteResponse{
+			Success:     false,
+			ProductName: productName,
+			Message:     "No valid result found in generator output",
+			GeneratedAt: time.Now().Format(time.RFC3339),
+		})
 		return
 	}
 
-	for _, file := range files {
-		if file.IsDir() {
-			siteInfo := map[string]interface{}{
-				"name":     file.Name(),
-				"created":  file.ModTime().Format(time.RFC3339),
-				"url":      fmt.Sprintf("/api/sites/%s", file.Name()),
-				"view_url": fmt.Sprintf("/generated/%s", file.Name()),
-			}
+	if strings.HasPrefix(resultLine, "SUCCESS:") {
+		sitePath := strings.TrimPrefix(resultLine, "SUCCESS:")
 
-			// Try to read metadata if it exists
-			metadataPath := filepath.Join(sitesDir, file.Name(), "metadata.json")
-			if metadataBytes, err := ioutil.ReadFile(metadataPath); err == nil {
-				var metadata map[string]interface{}
-				if json.Unmarshal(metadataBytes, &metadata) == nil {
-					siteInfo["product_name"] = metadata["product_name"]
-					siteInfo["generation_method"] = metadata["generation_method"]
-				}
-			}
+		respondJSON(w, GenerateSiteResponse{
+			Success:     true,
+			ProductName: productName,
+			SitePath:    sitePath,
+			Message:     "Website generated successfully with images",
+			GeneratedAt: time.Now().Format(time.RFC3339),
+		})
+	} else if strings.HasPrefix(resultLine, "ERROR:") {
+		errorMsg := strings.TrimPrefix(resultLine, "ERROR:")
 
-			sites = append(sites, siteInfo)
+		respondJSON(w, GenerateSiteResponse{
+			Success:     false,
+			ProductName: productName,
+			Message:     fmt.Sprintf("Generation failed: %s", errorMsg),
+			GeneratedAt: time.Now().Format(time.RFC3339),
+		})
+	}
+}
+
+// ListSitesHandler lists all generated websites
+func ListSitesHandler(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	sitesDir := "generated_sites"
+
+	entries, err := os.ReadDir(sitesDir)
+	if err != nil {
+		respondJSON(w, ListSitesResponse{
+			Success: false,
+			Sites:   []string{},
+			Count:   0,
+		})
+		return
+	}
+
+	var sites []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			// Check if index.html exists
+			indexPath := filepath.Join(sitesDir, entry.Name(), "index.html")
+			if _, err := os.Stat(indexPath); err == nil {
+				sites = append(sites, entry.Name())
+			}
 		}
 	}
 
-	response := map[string]interface{}{
-		"sites": sites,
-		"total": len(sites),
-	}
-
-	json.NewEncoder(w).Encode(response)
+	respondJSON(w, ListSitesResponse{
+		Success: true,
+		Sites:   sites,
+		Count:   len(sites),
+	})
 }
 
-// generateWebsiteWithPython calls the Python site generator
-func generateWebsiteWithPython(productName string, saveToDisk bool) (SiteGeneratorResponse, error) {
-	// Prepare Python script command
-	pythonScript := `
+// ViewSiteHandler serves a specific generated website
+func ViewSiteHandler(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	vars := mux.Vars(r)
+	siteName := vars["siteName"]
+
+	if siteName == "" {
+		http.Error(w, "Site name is required", http.StatusBadRequest)
+		return
+	}
+
+	// Sanitize site name to prevent directory traversal
+	re := regexp.MustCompile(`[^a-zA-Z0-9_-]`)
+	safeSiteName := re.ReplaceAllString(siteName, "")
+
+	indexPath := filepath.Join("generated_sites", safeSiteName, "index.html")
+
+	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
+		http.Error(w, "Site not found", http.StatusNotFound)
+		return
+	}
+
+	http.ServeFile(w, r, indexPath)
+}
+
+// DemoGenerateHandler generates 5 demo websites with images
+func DemoGenerateHandler(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Execute Python script to generate demo sites with basic generator
+	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
+	cmd := exec.Command(pythonPath, "-c", `
 import sys
-import os
-sys.path.insert(0, '/home/abhisheksoni/shiprocket-ai-hackathon-1/ai_agent')
+sys.path.append("/home/abhisheksoni/shiprocket-ai-hackathon-1/ai_agent")
+from simple_site_generator import SimpleSiteGenerator
 
-try:
-    from simple_site_generator import SimpleSiteGenerator
-    import json
-    
-    product_name = sys.argv[1]
-    save_to_disk = len(sys.argv) > 2 and sys.argv[2].lower() == 'true'
-    
-    generator = SimpleSiteGenerator()
-    result = generator.generate_website(product_name)
-    
-    if result["success"] and save_to_disk:
+generator = SimpleSiteGenerator()
+products = ["Smart Coffee Maker", "EcoFit Yoga Mat", "ProCode Text Editor", "Gourmet Pizza Restaurant", "Luxury Fashion Boutique"]
+results = []
+
+for product in products:
+    result = generator.generate_website(product)
+    if result["success"]:
         site_dir = generator.save_website(result)
-        result["saved_to"] = site_dir
-    
-    print(json.dumps(result))
-    
-except Exception as e:
-    error_result = {
-        "success": False,
-        "error": str(e),
-        "product_name": product_name if 'product_name' in locals() else "unknown"
-    }
-    print(json.dumps(error_result))
-`
+        results.append("SUCCESS:" + product + ":" + site_dir)
+    else:
+        results.append("ERROR:" + product + ":" + result.get("error", "Unknown error"))
 
-	// Write temporary Python script
-	tmpFile, err := ioutil.TempFile("", "site_generator_*.py")
-	if err != nil {
-		return SiteGeneratorResponse{}, fmt.Errorf("failed to create temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	if _, err := tmpFile.WriteString(pythonScript); err != nil {
-		return SiteGeneratorResponse{}, fmt.Errorf("failed to write temp script: %v", err)
-	}
-	tmpFile.Close()
-
-	// Execute Python script
-	saveFlag := "false"
-	if saveToDisk {
-		saveFlag = "true"
-	}
-
-	cmd := exec.Command("python3", tmpFile.Name(), productName, saveFlag)
-	cmd.Dir = "/home/abhisheksoni/shiprocket-ai-hackathon-1"
+for result in results:
+    print(result)
+`)
 
 	output, err := cmd.Output()
 	if err != nil {
-		return SiteGeneratorResponse{}, fmt.Errorf("python execution failed: %v", err)
+		fmt.Printf("Error executing demo generation: %v\n", err)
+		http.Error(w, "Internal server error during demo generation", http.StatusInternalServerError)
+		return
 	}
 
-	// Parse Python output
-	var result SiteGeneratorResponse
-	if err := json.Unmarshal(output, &result); err != nil {
-		return SiteGeneratorResponse{}, fmt.Errorf("failed to parse python output: %v", err)
-	}
-
-	return result, nil
-}
-
-// DemoSiteGeneratorHandler generates demo sites
-func DemoSiteGeneratorHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	demoProducts := []string{
-		"Smart Coffee Maker",
-		"EcoFit Yoga Mat",
-		"ProCode Text Editor",
-		"Gourmet Pizza Restaurant",
-		"Luxury Fashion Boutique",
-	}
-
-	results := []SiteGeneratorResponse{}
-
-	for _, product := range demoProducts {
-		result, err := generateWebsiteWithPython(product, true)
-		if err != nil {
-			result = SiteGeneratorResponse{
-				Success:     false,
-				ProductName: product,
-				Error:       err.Error(),
-				Timestamp:   time.Now().Format(time.RFC3339),
-			}
-		}
-		results = append(results, result)
-	}
-
-	response := map[string]interface{}{
-		"demo_results":    results,
-		"total_generated": len(results),
-		"timestamp":       time.Now().Format(time.RFC3339),
-	}
-
-	json.NewEncoder(w).Encode(response)
+	respondJSON(w, map[string]interface{}{
+		"success":      true,
+		"message":      "Demo sites generated successfully with images",
+		"output":       string(output),
+		"generated_at": time.Now().Format(time.RFC3339),
+	})
 }
