@@ -80,22 +80,10 @@ func GenerateSiteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute Python script with the basic version first (we'll add images later)
+	// Execute Enhanced Python script with real images and dynamic sections
 	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
-	cmd := exec.Command(pythonPath, "-c", fmt.Sprintf(`
-import sys
-sys.path.append("/home/abhisheksoni/shiprocket-ai-hackathon-1/ai_agent")
-from simple_site_generator import SimpleSiteGenerator
-
-generator = SimpleSiteGenerator()
-result = generator.generate_website("%s")
-
-if result["success"]:
-    site_dir = generator.save_website(result)
-    print("SUCCESS:" + site_dir)
-else:
-    print("ERROR:" + result.get("error", "Unknown error"))
-`, strings.ReplaceAll(productName, `"`, `\"`)))
+	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/enhanced_site_generator.py"
+	cmd := exec.Command(pythonPath, scriptPath, productName)
 
 	output, err := cmd.CombinedOutput() // Use CombinedOutput to get both stdout and stderr
 	if err != nil {
@@ -139,7 +127,7 @@ else:
 			Success:     true,
 			ProductName: productName,
 			SitePath:    sitePath,
-			Message:     "Website generated successfully with images",
+			Message:     "Enhanced website generated successfully with real images and dynamic sections",
 			GeneratedAt: time.Now().Format(time.RFC3339),
 		})
 	} else if strings.HasPrefix(resultLine, "ERROR:") {
@@ -251,40 +239,31 @@ func DemoGenerateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute Python script to generate demo sites with basic generator
+	// Execute Enhanced Python script to generate demo sites with real images
 	pythonPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/langchain_env/bin/python3"
-	cmd := exec.Command(pythonPath, "-c", `
-import sys
-sys.path.append("/home/abhisheksoni/shiprocket-ai-hackathon-1/ai_agent")
-from simple_site_generator import SimpleSiteGenerator
+	scriptPath := "/home/abhisheksoni/shiprocket-ai-hackathon-1/enhanced_site_generator.py"
 
-generator = SimpleSiteGenerator()
-products = ["Smart Coffee Maker", "EcoFit Yoga Mat", "ProCode Text Editor", "Gourmet Pizza Restaurant", "Luxury Fashion Boutique"]
-results = []
+	// Demo products representing different categories
+	products := []string{"Smart Coffee Maker", "EcoFit Yoga Mat", "ProCode Text Editor", "Gourmet Pizza Restaurant", "Luxury Fashion Boutique"}
 
-for product in products:
-    result = generator.generate_website(product)
-    if result["success"]:
-        site_dir = generator.save_website(result)
-        results.append("SUCCESS:" + product + ":" + site_dir)
-    else:
-        results.append("ERROR:" + product + ":" + result.get("error", "Unknown error"))
-
-for result in results:
-    print(result)
-`)
-
-	output, err := cmd.Output()
-	if err != nil {
-		fmt.Printf("Error executing demo generation: %v\n", err)
-		http.Error(w, "Internal server error during demo generation", http.StatusInternalServerError)
-		return
+	results := []string{}
+	for _, product := range products {
+		cmd := exec.Command(pythonPath, scriptPath, product)
+		output, err := cmd.Output()
+		if err != nil {
+			results = append(results, fmt.Sprintf("ERROR:%s:Failed to generate", product))
+		} else {
+			results = append(results, strings.TrimSpace(string(output)))
+		}
 	}
+
+	// Combine all results into output string
+	output := strings.Join(results, "\n")
 
 	respondJSON(w, map[string]interface{}{
 		"success":      true,
-		"message":      "Demo sites generated successfully with images",
-		"output":       string(output),
+		"message":      "Enhanced demo sites generated successfully with real images",
+		"output":       output,
 		"generated_at": time.Now().Format(time.RFC3339),
 	})
 }
