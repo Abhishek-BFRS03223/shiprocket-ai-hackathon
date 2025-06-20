@@ -1,95 +1,15 @@
 {
-  "product_name": "Gourmet Pizza Restaurant",
-  "timestamp": "2025-06-20T11:17:32.845080",
-  "generation_method": "Simple Template Engine",
-  "analysis": {
-    "product_name": "Gourmet Pizza Restaurant",
-    "category": "food_beverage",
-    "template": {
-      "colors": {
-        "primary": "#FF8C42",
-        "secondary": "#FFF8DC",
-        "accent": "#228B22"
-      },
-      "tone": "Warm and inviting",
-      "sections": [
-        "Hero",
-        "Menu/Products",
-        "About",
-        "Location",
-        "Reviews",
-        "Contact"
-      ]
-    },
-    "features": [
-      "High quality",
-      "User-friendly",
-      "Reliable"
-    ],
-    "target_audience": "Food enthusiasts and families",
-    "pricing": "$25"
-  },
-  "content": {
-    "hero": {
-      "headline": "Discover Gourmet Pizza Restaurant",
-      "subheadline": "Revolutionary innovation that transforms your culinary journey",
-      "cta_button": "Get Started Today",
-      "hero_text": "Experience the future with Gourmet Pizza Restaurant. Designed for those who demand excellence."
-    },
-    "features": {
-      "section_title": "Why Choose Gourmet Pizza Restaurant",
-      "features_list": [
-        {
-          "title": "High quality",
-          "description": "Experience high quality like never before with our innovative approach."
-        },
-        {
-          "title": "User-friendly",
-          "description": "Experience user-friendly like never before with our innovative approach."
-        },
-        {
-          "title": "Reliable",
-          "description": "Experience reliable like never before with our innovative approach."
-        }
-      ]
-    },
-    "benefits": {
-      "section_title": "Benefits You'll Love",
-      "benefits_list": [
-        "Fresh, high-quality ingredients",
-        "Authentic flavors and recipes",
-        "Convenient and fast service"
-      ]
-    },
-    "testimonials": {
-      "section_title": "What Our Customers Say",
-      "testimonials": [
-        {
-          "name": "Sarah Johnson",
-          "role": "Professional User",
-          "text": "Gourmet Pizza Restaurant exceeded all my expectations. Highly recommended!"
-        },
-        {
-          "name": "Mike Chen",
-          "role": "Business Owner",
-          "text": "Game-changer! Gourmet Pizza Restaurant revolutionized our workflow."
-        }
-      ]
-    },
-    "pricing": {
-      "section_title": "Simple Pricing",
-      "price": "$25",
-      "features": [
-        "All features included",
-        "24/7 support",
-        "30-day guarantee"
-      ]
-    },
-    "contact": {
-      "section_title": "Ready to Start?",
-      "cta_text": "Join thousands who love Gourmet Pizza Restaurant",
-      "cta_button": "Get Gourmet Pizza Restaurant Now",
-      "contact_info": "Contact us: hello@gourmetpizzarestaurant.com"
-    }
-  }
+  "name": "Gourmet Pizza Restaurant",
+  "category": "food_beverage",
+  "generated_at": "2025-06-20T11:39:37.023977",
+  "features": [
+    "Fresh Ingredients",
+    "Authentic Recipes",
+    "Expert Chefs",
+    "Sustainable Sourcing",
+    "Customizable Options",
+    "Fast Service"
+  ],
+  "tagline": "Taste the Difference with Gourmet Pizza Restaurant",
+  "description": "At Gourmet Pizza Restaurant, we're passionate about creating exceptional culinary experiences that bring people together through the love of great food and drink."
 }

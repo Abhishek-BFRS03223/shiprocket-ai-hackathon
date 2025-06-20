@@ -1,85 +1,15 @@
 {
-  "product_name": "Smart Coffee Maker",
-  "timestamp": "2025-06-20T11:17:32.844025",
-  "generation_method": "Simple Template Engine",
-  "analysis": {
-    "product_name": "Smart Coffee Maker",
-    "category": "technology",
-    "template": {
-      "colors": {
-        "primary": "#007ACC",
-        "secondary": "#F8F9FA",
-        "accent": "#FF6B6B"
-      },
-      "tone": "Professional and innovative",
-      "sections": [
-        "Hero",
-        "Features",
-        "Benefits",
-        "How It Works",
-        "Pricing",
-        "Contact"
-      ]
-    },
-    "features": [
-      "AI-powered intelligence"
-    ],
-    "target_audience": "Tech-savvy professionals and early adopters",
-    "pricing": "$99"
-  },
-  "content": {
-    "hero": {
-      "headline": "Discover Smart Coffee Maker",
-      "subheadline": "Revolutionary innovation that transforms your digital experience",
-      "cta_button": "Get Started Today",
-      "hero_text": "Experience the future with Smart Coffee Maker. Designed for those who demand excellence."
-    },
-    "features": {
-      "section_title": "Why Choose Smart Coffee Maker",
-      "features_list": [
-        {
-          "title": "AI-powered intelligence",
-          "description": "Experience ai-powered intelligence like never before with our innovative approach."
-        }
-      ]
-    },
-    "benefits": {
-      "section_title": "Benefits You'll Love",
-      "benefits_list": [
-        "Boost productivity and efficiency",
-        "Seamless integration with existing tools",
-        "Advanced security and reliability"
-      ]
-    },
-    "testimonials": {
-      "section_title": "What Our Customers Say",
-      "testimonials": [
-        {
-          "name": "Sarah Johnson",
-          "role": "Professional User",
-          "text": "Smart Coffee Maker exceeded all my expectations. Highly recommended!"
-        },
-        {
-          "name": "Mike Chen",
-          "role": "Business Owner",
-          "text": "Game-changer! Smart Coffee Maker revolutionized our workflow."
-        }
-      ]
-    },
-    "pricing": {
-      "section_title": "Simple Pricing",
-      "price": "$99",
-      "features": [
-        "All features included",
-        "24/7 support",
-        "30-day guarantee"
-      ]
-    },
-    "contact": {
-      "section_title": "Ready to Start?",
-      "cta_text": "Join thousands who love Smart Coffee Maker",
-      "cta_button": "Get Smart Coffee Maker Now",
-      "contact_info": "Contact us: hello@smartcoffeemaker.com"
-    }
-  }
+  "name": "Smart Coffee Maker",
+  "category": "technology",
+  "generated_at": "2025-06-20T11:39:36.690963",
+  "features": [
+    "Advanced AI Integration",
+    "Seamless Connectivity",
+    "Intuitive User Interface",
+    "Premium Build Quality",
+    "Extended Battery Life",
+    "Smart Automation"
+  ],
+  "tagline": "Experience the Future with Smart Coffee Maker",
+  "description": "Smart Coffee Maker represents the pinnacle of technological innovation, designed to enhance your digital experience with cutting-edge features and intuitive functionality."
 }

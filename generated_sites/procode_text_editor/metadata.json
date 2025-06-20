@@ -1,85 +1,15 @@
 {
-  "product_name": "ProCode Text Editor",
-  "timestamp": "2025-06-20T11:17:32.844783",
-  "generation_method": "Simple Template Engine",
-  "analysis": {
-    "product_name": "ProCode Text Editor",
-    "category": "technology",
-    "template": {
-      "colors": {
-        "primary": "#007ACC",
-        "secondary": "#F8F9FA",
-        "accent": "#FF6B6B"
-      },
-      "tone": "Professional and innovative",
-      "sections": [
-        "Hero",
-        "Features",
-        "Benefits",
-        "How It Works",
-        "Pricing",
-        "Contact"
-      ]
-    },
-    "features": [
-      "Professional grade"
-    ],
-    "target_audience": "Tech-savvy professionals and early adopters",
-    "pricing": "$99"
-  },
-  "content": {
-    "hero": {
-      "headline": "Discover ProCode Text Editor",
-      "subheadline": "Revolutionary innovation that transforms your digital experience",
-      "cta_button": "Get Started Today",
-      "hero_text": "Experience the future with ProCode Text Editor. Designed for those who demand excellence."
-    },
-    "features": {
-      "section_title": "Why Choose ProCode Text Editor",
-      "features_list": [
-        {
-          "title": "Professional grade",
-          "description": "Experience professional grade like never before with our innovative approach."
-        }
-      ]
-    },
-    "benefits": {
-      "section_title": "Benefits You'll Love",
-      "benefits_list": [
-        "Boost productivity and efficiency",
-        "Seamless integration with existing tools",
-        "Advanced security and reliability"
-      ]
-    },
-    "testimonials": {
-      "section_title": "What Our Customers Say",
-      "testimonials": [
-        {
-          "name": "Sarah Johnson",
-          "role": "Professional User",
-          "text": "ProCode Text Editor exceeded all my expectations. Highly recommended!"
-        },
-        {
-          "name": "Mike Chen",
-          "role": "Business Owner",
-          "text": "Game-changer! ProCode Text Editor revolutionized our workflow."
-        }
-      ]
-    },
-    "pricing": {
-      "section_title": "Simple Pricing",
-      "price": "$99",
-      "features": [
-        "All features included",
-        "24/7 support",
-        "30-day guarantee"
-      ]
-    },
-    "contact": {
-      "section_title": "Ready to Start?",
-      "cta_text": "Join thousands who love ProCode Text Editor",
-      "cta_button": "Get ProCode Text Editor Now",
-      "contact_info": "Contact us: hello@procodetexteditor.com"
-    }
-  }
+  "name": "ProCode Text Editor",
+  "category": "general",
+  "generated_at": "2025-06-20T11:39:36.924521",
+  "features": [
+    "Quality",
+    "Innovation",
+    "Excellence",
+    "Reliability",
+    "Value",
+    "Support"
+  ],
+  "tagline": "Discover the Power of ProCode Text Editor",
+  "description": "Discover the exceptional quality and innovation that defines ProCode Text Editor."
 }
