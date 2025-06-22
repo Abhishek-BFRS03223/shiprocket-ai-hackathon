@@ -7,70 +7,143 @@ Uses GPT API and Hugging Face API to generate unique themed ecommerce websites
 import os
 import sys
 import json
+import tempfile
+import shutil
+import uuid
 import requests
 import time
-import random
-import tempfile
 import base64
+import random
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-from io import BytesIO
-# Try to import PIL, fallback if not available
+from typing import Dict, List, Any, Optional
 try:
     from PIL import Image
+    PIL_AVAILABLE = True
 except ImportError:
-    # Fallback for environments without PIL
-    Image = None
+    PIL_AVAILABLE = False
     print("Warning: PIL not available, using fallback image handling")
 
-# Hugging Face configuration
-HF_API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev"
-HF_TOKEN = os.getenv('HUGGINGFACE_API_TOKEN', '')
+# Hugging Face configuration - Using free model for testing
+HF_API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+HF_TOKEN = os.getenv('HUGGINGFACE_TOKEN', '')
 
 def generate_product_image(prompt: str, retries: int = 3) -> str:
-    """Generate product-specific image using ONLY DALL-E API"""
-    openai_api_key = os.getenv('OPENAI_API_KEY', '')
+    """Generate product-specific image using Hugging Face FLUX.1-dev as primary, DALL-E as fallback"""
     
-    if not openai_api_key or openai_api_key == 'your_openai_key_here':
-        print("❌ No valid OpenAI API key - cannot generate images")
-        return get_smart_fallback_image(prompt)
+    # Try Hugging Face FLUX.1-dev first
+    if HF_TOKEN and HF_TOKEN != 'your_huggingface_token_here':
+        print(f"🤖 Generating image with Hugging Face FLUX.1-dev: {prompt}")
+        hf_result = generate_huggingface_image(prompt)
+        if hf_result is not None:
+            print("✅ Hugging Face FLUX image generated successfully")
+            return hf_result
+        print("⚠️ Hugging Face generation failed, trying DALL-E...")
+    
+    # Fallback to DALL-E if Hugging Face fails
+    openai_api_key = os.getenv('OPENAI_API_KEY', '')
+    if openai_api_key and openai_api_key != 'your_openai_key_here':
+        try:
+            import openai
+            client = openai.OpenAI(api_key=openai_api_key)
+            clean_prompt = clean_dalle_prompt(prompt)
+            print(f"🎨 Generating DALL-E image for: {clean_prompt}")
+            
+            response = client.images.generate(
+                model="dall-e-3",
+                prompt=clean_prompt,
+                n=1,
+                size="1024x1024",
+                quality="standard",
+                style="vivid"
+            )
+            
+            if response.data and len(response.data) > 0 and response.data[0].url:
+                image_url = response.data[0].url
+                print(f"✅ DALL-E image generated successfully")
+                return image_url
+                
+        except Exception as e:
+            print(f"❌ DALL-E generation failed: {e}")
+    
+    # Final fallback to smart images
+    print("💡 Using smart fallback images")
+    return get_smart_fallback_image(prompt)
+
+def generate_huggingface_image(prompt: str) -> Optional[str]:
+    """Generate image using Hugging Face Stable Diffusion model"""
+    import requests
+    import base64
+    import io
+    from datetime import datetime
     
     try:
-        import openai
+        # Clean prompt for Stable Diffusion
+        clean_prompt = clean_flux_prompt(prompt)
         
-        # Initialize OpenAI client
-        client = openai.OpenAI(api_key=openai_api_key)
+        headers = {
+            "Authorization": f"Bearer {HF_TOKEN}",
+            "Content-Type": "application/json",
+        }
         
-        # Clean and optimize prompt for DALL-E
-        clean_prompt = clean_dalle_prompt(prompt)
-        print(f"🎨 Generating DALL-E image for: {clean_prompt}")
+        # Updated payload for Stable Diffusion v1.5
+        payload = {
+            "inputs": clean_prompt,
+            "parameters": {
+                "guidance_scale": 7.5,
+                "num_inference_steps": 20,
+                "width": 512,
+                "height": 512
+            }
+        }
         
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=clean_prompt,
-            n=1,
-            size="1024x1024",
-            quality="standard",
-            style="vivid"
-        )
+        # Make API request
+        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
         
-        if response.data and len(response.data) > 0:
-            image_url = response.data[0].url
-            print(f"✅ DALL-E image generated successfully")
-            return image_url
-        else:
-            print("❌ No image data returned from DALL-E")
-            return get_smart_fallback_image(prompt)
+        if response.status_code == 200:
+            # Handle image response
+            image_bytes = response.content
             
-    except openai.RateLimitError as e:
-        print(f"⚠️ OpenAI quota exceeded - using smart fallback images")
-        return get_smart_fallback_image(prompt)
-    except openai.BadRequestError as e:
-        print(f"⚠️ DALL-E request error (may be content policy) - using smart fallback")
-        return get_smart_fallback_image(prompt)
+            # Convert to base64 data URL for direct embedding
+            import base64
+            base64_image = base64.b64encode(image_bytes).decode('utf-8')
+            return f"data:image/png;base64,{base64_image}"
+            
+        elif response.status_code == 503:
+            print("⏳ Hugging Face model is loading, waiting...")
+            time.sleep(10)
+            return generate_huggingface_image(prompt)  # Retry once
+            
+        else:
+            print(f"❌ Hugging Face API error: {response.status_code} - {response.text}")
+            return None
+            
     except Exception as e:
-        print(f"❌ DALL-E generation failed: {e}")
-        return get_smart_fallback_image(prompt)
+        print(f"❌ Hugging Face generation error: {e}")
+        return None
+
+def clean_flux_prompt(prompt: str) -> str:
+    """Clean and optimize prompt for FLUX model"""
+    # Remove redundant terms
+    prompt = prompt.replace("professional product photo of", "").strip()
+    prompt = prompt.replace("A professional product photograph of", "").strip()
+    prompt = prompt.replace("studio lighting", "").strip()
+    prompt = prompt.replace("commercial photography style", "").strip()
+    prompt = prompt.replace("4K resolution", "").strip()
+    prompt = prompt.replace("marketing image", "").strip()
+    prompt = prompt.replace("clean white background", "white background").strip()
+    
+    # Create optimized prompt for FLUX
+    if not prompt:
+        prompt = "product"
+    
+    # FLUX works well with clear, simple prompts
+    clean_prompt = f"professional product photo, {prompt}, white background, studio lighting, high quality, detailed"
+    
+    # Ensure prompt is reasonable length
+    if len(clean_prompt) > 200:
+        clean_prompt = f"product photo of {prompt}, white background, high quality"
+    
+    return clean_prompt
 
 def clean_dalle_prompt(prompt: str) -> str:
     """Clean and optimize prompt for DALL-E API"""
@@ -265,7 +338,7 @@ class EnhancedGPTSiteGenerator:
                     "home_lifestyle", "automotive", "sports_recreation", "business_professional"
                 ]
                 return category if category in valid_categories else "technology"
-            
+                
         except Exception as e:
             print(f"GPT categorization failed: {e}")
         
@@ -460,7 +533,7 @@ class EnhancedGPTSiteGenerator:
         try:
             # Clean the response
             content_text = response.strip()
-            
+                
             # Remove markdown formatting if present
             if "```json" in content_text:
                 start = content_text.find("```json") + 7
@@ -470,7 +543,7 @@ class EnhancedGPTSiteGenerator:
                 start = content_text.find("```") + 3
                 end = content_text.rfind("```")
                 content_text = content_text[start:end].strip()
-            
+                
             # Try to parse JSON
             content = json.loads(content_text)
             
@@ -623,7 +696,7 @@ class EnhancedGPTSiteGenerator:
             
             print("❌ Empty response from OpenAI API")
             return None
-            
+                    
         except Exception as e:
             error_str = str(e)
             print(f"❌ OpenAI API error: {error_str}")
@@ -638,7 +711,7 @@ class EnhancedGPTSiteGenerator:
                 print("⚠️ Unexpected API error - using dynamic fallback")
             
             return None
-
+    
     def generate_website(self, product_name: str) -> str:
         """Generate complete enhanced website"""
         print(f"🔍 Analyzing product: {product_name}")
@@ -661,7 +734,6 @@ class EnhancedGPTSiteGenerator:
         html = self.generate_themed_html(product_name, content, category, theme)
         
         # Step 5: Create temporary file (non-persistent)
-        import uuid
         site_id = str(uuid.uuid4())[:8]
         site_file = os.path.join(self.temp_dir, f"{site_id}.html")
         
@@ -1244,15 +1316,15 @@ class EnhancedGPTSiteGenerator:
             <h2 class="section-title">{content['pricing']['title']}</h2>
             <div class="pricing-card">
                 {f'<div class="original-price">{original_price}</div>' if original_price else ''}
-                <div class="price">{content['pricing']['price']}</div>
+            <div class="price">{content['pricing']['price']}</div>
                 <ul class="pricing-features">'''
         
         for feature in content['pricing']['features']:
             html += f'                    <li>{feature}</li>\n'
         
         html += f'''
-                </ul>
-                <a href="#" class="cta-button">{content['pricing']['cta']}</a>
+            </ul>
+            <a href="#" class="cta-button">{content['pricing']['cta']}</a>
                 {f'<p style="margin-top: 2rem; opacity: 0.9; font-size: 0.9rem;">{guarantee}</p>' if guarantee else ''}
             </div>
         </div>
@@ -1440,7 +1512,7 @@ class EnhancedGPTSiteGenerator:
                     {"name": f"{main_word.title()} Security Pack", "price": random.choice(["$39", "$59", "$79"])}
                 ]
             },
-                         "food_beverage": {
+            "food_beverage": {
                  "adjectives": ["Artisan", "Premium", "Organic", "Farm-Fresh", "Gourmet", "Handcrafted", "Traditional", "Authentic"],
                  "benefits": [
                      {"icon": "🌿", "title": "100% Organic", "description": f"Our {product_name} is grown without pesticides or artificial additives"},
@@ -1466,7 +1538,7 @@ class EnhancedGPTSiteGenerator:
                     {"name": f"{main_word.title()} Recipe Book", "price": random.choice(["$15", "$25", "$35"])},
                 ]
             },
-                         "health_wellness": {
+            "health_wellness": {
                  "adjectives": ["Clinical-Grade", "Doctor-Recommended", "Scientifically-Proven", "Premium", "Professional", "Advanced", "Therapeutic", "Medical-Grade"],
                  "benefits": [
                      {"icon": "🔬", "title": "Clinically Tested", "description": f"Our {product_name} is validated through rigorous clinical studies"},
